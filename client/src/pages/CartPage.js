@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from "react";
-import Layout from "./../components/Layout/Layout";
-import { useCart } from "../context/cart";
-import { useAuth } from "../context/auth";
-import { useNavigate } from "react-router-dom";
-import DropIn from "braintree-web-drop-in-react";
+import "../styles/CartStyles.css";
+
+import React, { useEffect, useState } from "react";
+
 import { AiFillWarning } from "react-icons/ai";
+import DropIn from "braintree-web-drop-in-react";
+import Layout from "./../components/Layout/Layout";
 import axios from "axios";
 import toast from "react-hot-toast";
-import "../styles/CartStyles.css";
+import { useAuth } from "../context/auth";
+import { useCart } from "../context/cart";
+import { useNavigate } from "react-router-dom";
 
 const CartPage = () => {
   const [auth, setAuth] = useAuth();
@@ -59,6 +61,7 @@ const CartPage = () => {
   }, [auth?.token]);
 
   //handle payments
+  // Handle payments
   const handlePayment = async () => {
     try {
       setLoading(true);
@@ -67,14 +70,22 @@ const CartPage = () => {
         nonce,
         cart,
       });
-      setLoading(false);
-      localStorage.removeItem("cart");
-      setCart([]);
-      navigate("/dashboard/user/orders");
-      toast.success("Payment Completed Successfully ");
+
+      // Check payment status and provide feedback
+      if (data.success) {
+        setLoading(false);
+        localStorage.removeItem("cart");
+        setCart([]);
+        navigate("/dashboard/user/orders");
+        toast.success("Payment Completed Successfully");
+      } else {
+        setLoading(false);
+        toast.error("Payment failed. Please try again.");
+      }
     } catch (error) {
       console.log(error);
       setLoading(false);
+      toast.error("An error occurred during the payment process.");
     }
   };
   return (
