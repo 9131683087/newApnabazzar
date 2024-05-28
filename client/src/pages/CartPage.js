@@ -8,6 +8,7 @@ import { AiFillWarning } from "react-icons/ai";
 import axios from "axios";
 import toast from "react-hot-toast";
 import "../styles/CartStyles.css";
+import { loadStripe } from "@stripe/stripe-js"
 
 const CartPage = () => {
   const [auth, setAuth] = useAuth();
@@ -54,9 +55,9 @@ const CartPage = () => {
       console.log(error);
     }
   };
-  useEffect(() => {
-    getToken();
-  }, [auth?.token]);
+  // useEffect(() => {
+  //   getToken();
+  // }, [auth?.token]);
 
   //handle payments
   const handlePayment = async () => {
@@ -77,6 +78,39 @@ const CartPage = () => {
       setLoading(false);
     }
   };
+
+  // stripe payment frontend
+  const makePayment = async () => {
+    try {
+      setLoading(true);
+      console.log("cart list -> ", cart)
+      const stripe = await loadStripe("pk_test_51Oq7TDSEjZWHWstSZpZK9eH2OGwVR4XIAYnnuLGzBwe8Pzg578tLyEK0IdXYayFo0BS2bQCYixt43eDidiDmoFe8005ZUItVPm");
+      // const stripe = await loadStripe("");
+      
+      const body = {product: cart};
+      const header = {
+        "Content-Type": "application/json"
+      };
+      const response = await fetch("api/v1/product/sripe-checkout-payment", {
+        method: 'POST',
+        headers: header,
+        body: JSON.stringify(body)
+      });
+  
+      const session = await response.json();
+      const result = stripe.redirectToCheckout({
+        sessionId: session.id
+      });
+  
+      if(result.error) {
+        console.log(result.error);
+      }
+      setLoading(false);
+      
+    } catch (error) {
+      setLoading(false);
+    }
+  }
   return (
     <Layout>
       <div className=" cart-page">
@@ -168,11 +202,13 @@ const CartPage = () => {
                 </div>
               )}
               <div className="mt-2">
-                {!clientToken || !auth?.token || !cart?.length ? (
+                {
+                // !clientToken || !auth?.token || !cart?.length ? (
+                false ? (
                   ""
                 ) : (
                   <>
-                    <DropIn
+                    {/* <DropIn
                       options={{
                         authorization: clientToken,
                         paypal: {
@@ -180,12 +216,14 @@ const CartPage = () => {
                         },
                       }}
                       onInstance={(instance) => setInstance(instance)}
-                    />
+                    /> */}
 
                     <button
                       className="btn btn-primary"
-                      onClick={handlePayment}
-                      disabled={loading || !instance || !auth?.user?.address}
+                      // onClick={handlePayment}
+                      onClick={makePayment}
+                      // disabled={loading || !instance || !auth?.user?.address}
+                      disabled={loading}
                     >
                       {loading ? "Processing ...." : "Make Payment"}
                     </button>

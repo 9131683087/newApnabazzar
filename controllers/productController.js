@@ -5,6 +5,8 @@ import fs from "fs";
 import slugify from "slugify";
 import braintree from "braintree";
 import dotenv from "dotenv";
+import stripe from "stripe";
+let stripePay = stripe('sk_test_51Oq7TDSEjZWHWstSZpq5gkNkBz2Nfl3iKEIBbBmja6iY85Buvjx0dGP5diZbvd8f96KDjOhIEMP3pe5qSZLWPXiU000jqGsOqx')
 
 dotenv.config();
 
@@ -374,5 +376,41 @@ export const brainTreePaymentController = async (req, res) => {
     );
   } catch (error) {
     console.log(error);
+  }
+};
+
+export const stripePaymentController = async (req, res) => {
+  try {
+    const { product = [] } = req.body;
+    if (!product.length) {
+      res.json({status: 401})
+    }
+    else {
+      let lineitem = product.map(o => ({
+        price_data:{
+          currency: 'usd',
+          product_data: {
+            name: o.name
+          },
+          unit_amount: o.price * 100
+        },
+        quantity: o.quantity
+      }))
+      const session = await stripePay.checkout.sessions.create({
+        payment_method_types: [
+          "card"
+        ],
+        line_items:lineitem,
+        success_url: 'http://localhost:3000',
+        cancel_url: 'http://localhost:3000/product/Boys-Full-Tshirt',
+        // success_url: '',
+        // cancel_url: '',
+        mode: 'payment'
+      })
+      res.json({id: session.id})
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).send(error);
   }
 };
